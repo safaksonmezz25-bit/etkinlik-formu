@@ -82,7 +82,7 @@ h2 { font-size: 1.15rem; }
 .etiket { font-size: .82rem; font-weight: 600; color: var(--ink); display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
 .etiket small { font-weight: 400; color: var(--muted); }
 .zorunlu { color: var(--danger); font-style: normal; }
-input[type="text"], input[type="date"], select, textarea {
+input[type="text"], input[type="email"], input[type="password"], input[type="date"], select, textarea {
   width: 100%; font: inherit; font-size: .95rem; color: var(--ink); background: var(--surface);
   border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; min-height: 42px;
 }
@@ -170,6 +170,47 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
   .oturum::before { left: -17px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* Giriş, gönderim listesi, kullanıcı çubuğu */
+.bant.bilgi b { color: var(--accent); }
+.bant.hata-bant { background: var(--danger-soft); color: var(--ink); align-items: center; }
+.mono { font-family: var(--font-mono); font-weight: 500; }
+.soluk { color: var(--muted); margin: 0; }
+.kullanici { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; margin-top: 6px; padding: 6px 6px 6px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); font-size: .86rem; }
+.kullanici-ad { color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
+.kullanici-ad b { color: var(--ink); font-weight: 600; }
+.kullanici-dugmeler { display: flex; gap: 2px; }
+.giris { max-width: 520px; }
+.giris h2 { font-size: 1.3rem; }
+.giris-adim { display: grid; gap: 12px; }
+.sekmeler { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; }
+.sekme { font: 600 .9rem var(--font-body); border: 0; border-radius: 7px; padding: 9px 10px; min-height: 40px; background: transparent; color: var(--muted); cursor: pointer; }
+.sekme:hover { color: var(--accent); }
+.sekme[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.kucuk-secim { display: inline-flex; gap: 8px; align-items: center; font-size: .86rem; color: var(--muted); cursor: pointer; width: fit-content; }
+.kucuk-secim input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+.giris-mesaj { margin: 0; font-size: .88rem; color: var(--muted); }
+.giris-mesaj:empty { display: none; }
+.giris-mesaj.is-hata-metin { color: var(--danger); font-weight: 600; }
+.satir-dugmeler { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.panel { display: grid; gap: 14px; }
+.gonderim { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 14px 16px; display: flex; gap: 12px 16px; align-items: center; }
+.g-bilgi { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.gonderim.kilitli { background: var(--surface-2); }
+.g-ust { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.g-no { font: 500 .9rem var(--font-mono); color: var(--accent); overflow-wrap: anywhere; }
+.g-adlar { font-family: var(--font-display); font-weight: 600; font-size: 1rem; }
+.g-alt { font-size: .82rem; color: var(--muted); }
+.cip.kilit { background: var(--warm-soft); color: var(--warm); border-color: transparent; }
+.bos-durum { text-align: left; }
+.bos-durum p { margin: 0; }
+@media (max-width: 620px) {
+  .gonderim { flex-direction: column; align-items: stretch; }
+  .bant { flex-wrap: wrap; row-gap: 4px; }
+  .bant .bant-metin { flex: 1 1 100%; }
+  .bant > .dugme { margin-left: -8px; }
+  .gonderim .dugme { justify-content: center; }
+}
 </style>
 </head>
 <body>
@@ -178,18 +219,64 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
     <span class="kurum" id="kurum-etiket">Kültür programı</span>
     <h1 id="baslik">Etkinlik Bilgi Formu</h1>
     <p id="aciklama"></p>
+    <div class="kullanici" id="kullanici" hidden>
+      <span class="kullanici-ad">Giriş: <b id="k-eposta"></b></span>
+      <span class="kullanici-dugmeler">
+        <button type="button" class="dugme metin" data-act="panel">Gönderimlerim</button>
+        <button type="button" class="dugme metin" data-act="cikis">Çıkış</button>
+      </span>
+    </div>
   </header>
 
   <div class="bant demo" id="demo-bant" hidden>
-    <div class="bant-metin"><b>Deneme modu.</b> Form henüz bir E-Tabloya bağlı değil; gönderdiğiniz veri hiçbir yere gitmez. <span id="ornek-not">Sayfa örnek verilerle açıldı.</span></div>
-  </div>
-  <div class="bant bilgi" id="taslak-bant" hidden>
-    <div class="bant-metin">Bu tarayıcıda yarım kalan formunuz geri yüklendi.</div>
-    <button type="button" class="dugme metin sil" data-act="taslak-sil" style="min-height:28px; padding:2px 8px;">Boş formla başla</button>
+    <div class="bant-metin"><b>Deneme modu.</b> Form henüz bir E-Tabloya bağlı değil; kayıtlar yalnızca bu tarayıcıda tutulur. <span id="ornek-not">Herhangi bir e-posta ve şifreyle girebilirsiniz; gerçek şifrenizi yazmayın.</span></div>
   </div>
 
-  <form id="form" novalidate>
+  <!-- 1) Giriş / kayıt -->
+  <section class="bolum giris" id="giris" hidden aria-labelledby="giris-baslik">
+    <div class="sekmeler" role="tablist" aria-label="Giriş ya da kayıt">
+      <button type="button" role="tab" class="sekme" id="sekme-giris" data-act="mod-giris" aria-selected="true">Giriş yap</button>
+      <button type="button" role="tab" class="sekme" id="sekme-kayit" data-act="mod-kayit" aria-selected="false">Kayıt ol</button>
+    </div>
+    <h2 id="giris-baslik">Giriş yapın</h2>
+    <p class="soluk" id="giris-aciklama"></p>
+    <form id="giris-form" class="giris-adim" novalidate>
+      <label class="alan"><span class="etiket">E-posta adresi</span>
+        <input type="email" id="giris-eposta" name="email" autocomplete="username" inputmode="email" placeholder="ad.soyad@kurum.gov.tr"></label>
+      <label class="alan"><span class="etiket">Şifre<small id="sifre-ipucu" hidden></small></span>
+        <input type="password" id="giris-sifre" name="password" autocomplete="current-password"></label>
+      <label class="alan" id="tekrar-alan" hidden><span class="etiket">Şifre (tekrar)</span>
+        <input type="password" id="giris-sifre2" name="password2" autocomplete="new-password"></label>
+      <label class="kucuk-secim"><input type="checkbox" id="sifre-goster"> Şifreyi göster</label>
+      <div class="satir-dugmeler">
+        <button type="submit" class="dugme ana" id="giris-dugme">Giriş yap</button>
+        <button type="button" class="dugme metin" data-act="unuttum" id="unuttum-dugme">Şifremi unuttum</button>
+      </div>
+    </form>
+    <p class="giris-mesaj" id="giris-mesaj" aria-live="polite"></p>
+  </section>
+
+  <!-- 2) Gönderimlerim -->
+  <section id="panel" class="panel" hidden aria-labelledby="panel-baslik">
+    <div class="arac">
+      <h2 id="panel-baslik">Gönderimlerim</h2>
+      <button type="button" class="dugme ana" data-act="yeni-form">+ Yeni form doldur</button>
+    </div>
+    <div class="liste" id="gonderim-listesi"></div>
+  </section>
+
+  <!-- 3) Form -->
+  <form id="form" novalidate hidden>
     <div style="display:grid; gap:20px;">
+      <div class="bant bilgi" id="duzenleme-bant" hidden>
+        <div class="bant-metin"><b id="duzenleme-no" class="mono"></b> numaralı gönderiminizi düzenliyorsunuz.</div>
+        <button type="button" class="dugme metin" data-act="panel" style="min-height:28px; padding:2px 8px;">Gönderimlerime dön</button>
+      </div>
+      <div class="bant bilgi" id="taslak-bant" hidden>
+        <div class="bant-metin" id="taslak-metin">Bu tarayıcıda yarım kalan formunuz geri yüklendi.</div>
+        <button type="button" class="dugme metin sil" data-act="taslak-sil" id="taslak-sil-dugme" style="min-height:28px; padding:2px 8px;">Boş formla başla</button>
+      </div>
+
       <section class="bolum" aria-labelledby="gonderen-baslik">
         <div class="bolum-baslik"><h2 id="gonderen-baslik">Gönderen</h2></div>
         <div class="alanlar" id="gonderen"></div>
@@ -220,6 +307,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
     </div>
   </form>
 
+  <!-- 4) Sonuç -->
   <section class="bolum sonuc" id="sonuc" hidden aria-live="polite"></section>
   <p class="alt-not">Etkinlik Bilgi Formu · açık kaynak</p>
 </main>
@@ -233,16 +321,18 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
 (function () {
   "use strict";
   var A = Object.assign({
-    baslik: "Etkinlik Bilgi Formu", aciklama: "", gonderimAdresi: "", formAnahtari: "",
+    baslik: "Etkinlik Bilgi Formu", aciklama: "", gonderimAdresi: "",
     birimler: [], turler: ["Söyleşi", "Panel", "Seminer", "Film gösterimi ve söyleşi", "Konser / Dinleti", "Sergi gezisi", "Kent yürüyüşü / Tur", "Atölye", "Stand-up", "Anma"],
     saatIlk: "07:00", saatSon: "23:45", saatAdimDk: 15
   }, window.FORM_AYARLARI || {});
   var DEMO = !String(A.gonderimAdresi || "").trim();
-  // Deneme modunun taslağı ayrı tutulur; gerçek forma taşınmaz.
-  var TASLAK_ANAHTAR = DEMO ? "etkinlik-formu-deneme-v1" : "etkinlik-formu-taslak-v1";
+  var ONEK = "etkinlik-formu-" + (DEMO ? "deneme-" : "");
+  var OTURUM_ANAHTAR = ONEK + "oturum-v1", TASLAK_ONEK = ONEK + "taslak-v2:";
   var DURUMLAR = [["Kesinleşti", "kesinlesti"], ["Planlanıyor", "planlaniyor"], ["Öneri", "oneri"]];
   var KATILIM = ["Herkese açık", "Davetli", "Kayıt gerekli"];
   var DIGER = "Diğer", LISTEDE_YOK = "__listede_yok";
+  var EPOSTA_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  var SIFRE_EN_AZ = 8; // Kod.gs'deki AYAR.SIFRE_EN_AZ ile aynı olmalı
 
   var SAATLER = (function () {
     var out = [], p = function (s) { var a = s.split(":"); return (+a[0]) * 60 + (+a[1]); };
@@ -252,56 +342,274 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
     return out;
   })();
 
+  // ---------- küçük yardımcılar ----------
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function oku(k) { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch (e) { return null; } }
+  function yaz(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  function sil(k) { try { localStorage.removeItem(k); } catch (e) { /* yok */ } }
+  function iki(n) { return String(n).padStart(2, "0"); }
+  function zamanYazi(d) { return iki(d.getDate()) + "." + iki(d.getMonth() + 1) + "." + d.getFullYear() + " " + iki(d.getHours()) + ":" + iki(d.getMinutes()); }
+
   var sira = 0;
   function yeniId(p) { sira += 1; return p + sira.toString(36) + Math.random().toString(36).slice(2, 6); }
   function bosOturum() { return { id: yeniId("o"), ad: "", tur: "", turDiger: "", tarih: "", baslangic: "", bitis: "", mekan: "", konusmacilar: "", moderator: "", diger: "", tanitim: "", isbirligi: "", katilim: [], notlar: "" }; }
   function bosEtkinlik() { return { id: yeniId("e"), ad: "", seri: "", durum: "", acik: true, oturumlar: [bosOturum()] }; }
   function bosGonderen() { return { birim: "", birimDiger: "", hazirlayan: "", iletisim: "" }; }
 
-  function ornekVeri() {
-    var e1 = bosEtkinlik(), e2 = bosEtkinlik();
-    e1.ad = "Sezai Karakoç’un İstanbul’u"; e1.durum = "Kesinleşti";
-    Object.assign(e1.oturumlar[0], { ad: "Sezai Karakoç, İstanbul: Mekânlar ve Hatıralar", tur: "Kent yürüyüşü / Tur", tarih: "2026-11-14", baslangic: "10:00", mekan: "Moda – Cağaloğlu – Şehzadebaşı", diger: "Rehber: Ömer Erdem" });
-    var o2 = bosOturum();
-    Object.assign(o2, { ad: "Panel", tur: "Panel", tarih: "2026-11-14", baslangic: "16:00", bitis: "18:30", mekan: "Muammer Karaca Tiyatrosu", konusmacilar: "Ömer Erdem\nAbdullah Uçman\nZeynep Karaca", katilim: ["Herkese açık"] });
-    e1.oturumlar.push(o2);
-    e2.ad = "Hüsn-ü Aşk Konuşmaları I"; e2.seri = "Hüsn-ü Aşk Konuşmaları"; e2.durum = "Kesinleşti";
-    Object.assign(e2.oturumlar[0], { tur: "Söyleşi", tarih: "2026-11-27", baslangic: "18:00", mekan: "Taş Oda", konusmacilar: "Zeynep Gemuhluoğlu", katilim: ["Herkese açık"] });
-    var g = bosGonderen();
-    g.birim = A.birimler.indexOf("Dini Kurum ve Topluluklarla İlişkiler") >= 0 ? "Dini Kurum ve Topluluklarla İlişkiler" : "";
-    g.hazirlayan = "Örnek Kişi";
-    return { gonderen: g, etkinlikler: [e1, e2] };
+  // ---------- oturum (giriş) ----------
+  var OT = oku(OTURUM_ANAHTAR);
+  if (!OT || !OT.token) OT = null;
+  var DUZENLENEN = null, KILITLI = false, GIRIS_MODU = "giris";
+  function oturumYaz() { yaz(OTURUM_ANAHTAR, OT); }
+  function birimAta(g, b) {
+    if (!b) return;
+    if (A.birimler.length) { if (A.birimler.indexOf(b) >= 0) g.birim = b; else { g.birim = LISTEDE_YOK; g.birimDiger = b; } }
+    else g.birimDiger = b;
+  }
+  function gonderenVarsayilan() { var g = bosGonderen(); if (OT) { birimAta(g, OT.birim); g.hazirlayan = OT.ad || ""; } return g; }
+
+  // ---------- sunucu ----------
+  function api(islem, veri) {
+    var govde = Object.assign({ islem: islem, token: OT ? OT.token : "" }, veri || {});
+    var istek = DEMO ? sahteSunucu(govde) : fetch(A.gonderimAdresi, { method: "POST", body: JSON.stringify(govde) })
+      .then(function (r) { if (!r.ok) throw new Error("Sunucuya ulaşılamadı (" + r.status + ")."); return r.json(); });
+    return istek.then(function (j) {
+      if (!j || !j.ok) { var e = new Error((j && j.hata) || "Sunucu yanıt vermedi."); e.kod = (j && j.kod) || ""; throw e; }
+      return j;
+    }, function (err) {
+      throw new Error(err && /^Sunucuya/.test(err.message) ? err.message : "Bağlantı kurulamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.");
+    });
+  }
+  function oturumHatasi(err) {
+    if (err && err.kod === "OTURUM") { cikisYap(err.message, false); return true; }
+    return false;
   }
 
+  // Deneme modu: E-Tablo yerine bu tarayıcıda çalışan sahte sunucu (her e-posta ve şifre kabul edilir).
+  var SAHTE_DB = ONEK + "veritabani", sahteBellek = null;
+  function ornekVeri(ilk) {
+    if (ilk) return { gonderen: { birim: A.birimler[0] || "Örnek Birim", hazirlayan: "Örnek Kişi", iletisim: "" }, etkinlikler: [
+      { ad: "Sezai Karakoç’un İstanbul’u", seri: "", durum: "Kesinleşti", oturumlar: [
+        { ad: "Sezai Karakoç, İstanbul: Mekânlar ve Hatıralar", tur: "Kent yürüyüşü / Tur", tarih: "2026-11-14", baslangic: "10:00", bitis: "", mekan: "Moda – Cağaloğlu – Şehzadebaşı", konusmacilar: "", moderator: "", diger: "Rehber: Ömer Erdem", tanitim: "", isbirligi: "", katilim: [], notlar: "" },
+        { ad: "Panel", tur: "Panel", tarih: "2026-11-14", baslangic: "16:00", bitis: "18:30", mekan: "Muammer Karaca Tiyatrosu", konusmacilar: "Ömer Erdem\nAbdullah Uçman\nZeynep Karaca", moderator: "", diger: "", tanitim: "", isbirligi: "", katilim: ["Herkese açık"], notlar: "" }] },
+      { ad: "Hüsn-ü Aşk Konuşmaları I", seri: "Hüsn-ü Aşk Konuşmaları", durum: "Kesinleşti", oturumlar: [
+        { ad: "", tur: "Söyleşi", tarih: "2026-11-27", baslangic: "18:00", bitis: "", mekan: "Taş Oda", konusmacilar: "Zeynep Gemuhluoğlu", moderator: "", diger: "", tanitim: "", isbirligi: "", katilim: ["Herkese açık"], notlar: "" }] }] };
+    return { gonderen: { birim: A.birimler[0] || "Örnek Birim", hazirlayan: "Örnek Kişi", iletisim: "" }, etkinlikler: [
+      { ad: "Ey Gönül Gel Niyazi-i Mısri Konuşmaları VII", seri: "Ey Gönül Gel Niyazi-i Mısri Konuşmaları", durum: "Kesinleşti", oturumlar: [
+        { ad: "", tur: "Söyleşi", tarih: "2026-10-24", baslangic: "16:00", bitis: "", mekan: "Taş Oda", konusmacilar: "Mustafa Tatcı", moderator: "", diger: "", tanitim: "", isbirligi: "", katilim: ["Herkese açık"], notlar: "" }] }] };
+  }
+  function sahteSunucu(g) { return new Promise(function (coz) { setTimeout(function () { coz(sahteIsle(g)); }, 250); }); }
+  function sahteIsle(g) {
+    var db = oku(SAHTE_DB) || sahteBellek || { gonderimler: [] };
+    var kaydetDb = function () { sahteBellek = db; yaz(SAHTE_DB, db); };
+    var ozet = function (x) {
+      return { gonderimNo: x.no, zaman: x.zaman, guncelleme: x.guncelleme, birim: x.veri.gonderen.birim, kilitli: x.kilitli,
+        etkinlik: x.veri.etkinlikler.length, oturum: x.veri.etkinlikler.reduce(function (s, e) { return s + e.oturumlar.length; }, 0),
+        adlar: x.veri.etkinlikler.slice(0, 4).map(function (e) { return e.ad; }) };
+    };
+    if (g.islem === "kayitOl" || g.islem === "girisYap") {
+      // Deneme modunda şifre hiçbir yerde saklanmaz ve denetlenmez.
+      var ep = String(g.eposta || "").trim().toLowerCase();
+      if (!EPOSTA_RE.test(ep)) return { ok: false, hata: "Geçerli bir e-posta adresi yazın." };
+      if (g.islem === "kayitOl" && String(g.sifre || "").length < SIFRE_EN_AZ) return { ok: false, hata: "Şifre en az " + SIFRE_EN_AZ + " karakter olmalı." };
+      if (!db.gonderimler.some(function (x) { return x.eposta === ep; })) {
+        db.gonderimler.push({ no: "G-20261020-101500-ORN", eposta: ep, zaman: "20.10.2026 10:15", t: 1, guncelleme: "", kilitli: true, veri: ornekVeri(false) });
+        db.gonderimler.push({ no: "G-20261105-143000-ORN", eposta: ep, zaman: "05.11.2026 14:30", t: 2, guncelleme: "", kilitli: false, veri: ornekVeri(true) });
+        kaydetDb();
+      }
+      return { ok: true, token: "deneme:" + ep, eposta: ep, birim: "", ad: "" };
+    }
+    var sahip = String(g.token || "").indexOf("deneme:") === 0 ? g.token.slice(7) : "";
+    if (!sahip) return { ok: false, hata: "Oturumunuzun süresi doldu. Yeniden giriş yapın.", kod: "OTURUM" };
+    var bul = function (no) { return db.gonderimler.find(function (x) { return x.no === no && x.eposta === sahip; }); };
+    if (g.islem === "gonderimlerim") {
+      return { ok: true, gonderimler: db.gonderimler.filter(function (x) { return x.eposta === sahip; }).sort(function (a, b) { return b.t - a.t; }).map(ozet) };
+    }
+    if (g.islem === "gonderimGetir") {
+      var x = bul(g.gonderimNo);
+      return x ? { ok: true, gonderimNo: x.no, kilitli: x.kilitli, veri: JSON.parse(JSON.stringify(x.veri)) } : { ok: false, hata: "Bu gönderim bulunamadı ya da size ait değil." };
+    }
+    if (g.islem === "kaydet") {
+      var simdi = new Date();
+      if (g.gonderimNo) {
+        var y = bul(g.gonderimNo);
+        if (!y) return { ok: false, hata: "Bu gönderim bulunamadı ya da size ait değil." };
+        if (y.kilitli) return { ok: false, hata: "Bu gönderim kilitlenmiş; artık değiştirilemez." };
+        y.veri = g.veri; y.guncelleme = zamanYazi(simdi); kaydetDb();
+        return { ok: true, gonderimNo: y.no, guncellendi: true };
+      }
+      var no = "G-" + simdi.getFullYear() + iki(simdi.getMonth() + 1) + iki(simdi.getDate()) + "-" + iki(simdi.getHours()) + iki(simdi.getMinutes()) + iki(simdi.getSeconds()) + "-" + Math.random().toString(36).slice(2, 5).toUpperCase();
+      db.gonderimler.push({ no: no, eposta: sahip, zaman: zamanYazi(simdi), t: simdi.getTime(), guncelleme: "", kilitli: false, veri: g.veri });
+      kaydetDb();
+      return { ok: true, gonderimNo: no, guncellendi: false };
+    }
+    if (g.islem === "cikis") return { ok: true };
+    return { ok: false, hata: "Bilinmeyen işlem." };
+  }
+
+  // ---------- görünümler ----------
+  function goster(ad) {
+    ["giris", "panel", "form", "sonuc"].forEach(function (g) { $(g).hidden = g !== ad; });
+    $("kullanici").hidden = !OT || ad === "giris";
+    if (OT) $("k-eposta").textContent = OT.eposta;
+    window.scrollTo(0, 0);
+  }
+
+  // Giriş / kayıt
+  var ACIKLAMA = {
+    giris: "Kayıt olduğunuz e-posta adresi ve şifrenizle girin. Daha önce gönderdiğiniz formları burada görüp düzenleyebilirsiniz.",
+    kayit: "İlk kez kullanıyorsanız e-posta adresinizle bir şifre belirleyin. Bu şifreyi yalnızca bu form için kullanın; başka hesaplarınızın şifresini yazmayın."
+  };
+  function girisMesaj(m, hata) { var el = $("giris-mesaj"); el.textContent = m || ""; el.classList.toggle("is-hata-metin", !!hata); }
+  function sifreGorunur(acik) { $("sifre-goster").checked = acik; $("giris-sifre").type = $("giris-sifre2").type = acik ? "text" : "password"; }
+  function girisSifirla(epostaDa) {
+    $("giris-sifre").value = ""; $("giris-sifre2").value = ""; sifreGorunur(false); girisMesaj("");
+    if (epostaDa) $("giris-eposta").value = "";
+  }
+  function girisModu(m) {
+    GIRIS_MODU = m; var kayit = m === "kayit";
+    $("sekme-giris").setAttribute("aria-selected", String(!kayit));
+    $("sekme-kayit").setAttribute("aria-selected", String(kayit));
+    $("giris-baslik").textContent = kayit ? "Kayıt olun" : "Giriş yapın";
+    $("giris-aciklama").textContent = ACIKLAMA[m];
+    $("tekrar-alan").hidden = !kayit; $("sifre-ipucu").hidden = !kayit; $("unuttum-dugme").hidden = kayit;
+    $("sifre-ipucu").textContent = "en az " + SIFRE_EN_AZ + " karakter";
+    $("giris-sifre").setAttribute("autocomplete", kayit ? "new-password" : "current-password");
+    $("giris-dugme").textContent = kayit ? "Kayıt ol ve gir" : "Giriş yap";
+    $("giris-sifre2").value = ""; girisMesaj("");
+  }
+  $("sifre-goster").addEventListener("change", function () { sifreGorunur(this.checked); });
+  $("giris-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var kayit = GIRIS_MODU === "kayit", ep = $("giris-eposta").value.trim(), s1 = $("giris-sifre").value, s2 = $("giris-sifre2").value;
+    var dur = function (m, el) { girisMesaj(m, true); $(el).focus(); };
+    if (!EPOSTA_RE.test(ep)) return dur("Geçerli bir e-posta adresi yazın.", "giris-eposta");
+    if (!s1) return dur("Şifrenizi yazın.", "giris-sifre");
+    if (kayit && s1.length < SIFRE_EN_AZ) return dur("Şifre en az " + SIFRE_EN_AZ + " karakter olmalı.", "giris-sifre");
+    if (kayit && s1 !== s2) return dur("İki şifre birbirini tutmuyor; aynı şifreyi iki kez yazın.", "giris-sifre2");
+    var b = $("giris-dugme"), metin = b.textContent;
+    b.disabled = true; b.textContent = kayit ? "Kaydediliyor…" : "Kontrol ediliyor…"; girisMesaj("");
+    api(kayit ? "kayitOl" : "girisYap", { eposta: ep, sifre: s1 }).then(function (j) {
+      OT = { token: j.token, eposta: j.eposta, birim: j.birim || "", ad: j.ad || "" };
+      oturumYaz(); girisSifirla(false); girisModu("giris"); paneliAc();
+    }).catch(function (err) { girisMesaj(err.message, true); $("giris-sifre").select(); })
+      .then(function () { b.disabled = false; b.textContent = metin; });
+  });
+  function cikisYap(mesaj, elle) {
+    if (OT && elle) {
+      api("cikis").catch(function () { /* sunucuya ulaşılamasa da yerelde çıkılır */ });
+      // Ortak bilgisayarda bilgi kalmasın diye bu kişinin taslakları silinir.
+      try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf(TASLAK_ONEK + OT.eposta + ":") === 0) localStorage.removeItem(k); }); } catch (e) { /* yok */ }
+    }
+    OT = null; sil(OTURUM_ANAHTAR); DUZENLENEN = null;
+    girisSifirla(elle); girisModu("giris"); goster("giris"); girisMesaj(mesaj || "", !elle);
+  }
+
+  // Gönderimlerim
+  function paneliAc() {
+    DUZENLENEN = null; goster("panel");
+    var kap = $("gonderim-listesi");
+    kap.innerHTML = '<p class="soluk">Gönderimleriniz yükleniyor…</p>';
+    api("gonderimlerim").then(function (j) { listeCiz(j.gonderimler || []); }).catch(function (err) {
+      if (oturumHatasi(err)) return;
+      kap.innerHTML = '<div class="bant hata-bant"><div class="bant-metin">' + esc(err.message) + '</div><button type="button" class="dugme metin" data-act="panel">Tekrar dene</button></div>';
+    });
+  }
+  function listeCiz(liste) {
+    var kap = $("gonderim-listesi");
+    if (!liste.length) {
+      kap.innerHTML = '<div class="bolum bos-durum"><p><b>Henüz bir gönderiminiz yok.</b></p><p class="soluk">İlk formunuzu doldurmak için “+ Yeni form doldur”a basın. Gönderdiğiniz formlar burada listelenir; gerektiğinde açıp düzenleyebilirsiniz.</p></div>';
+      return;
+    }
+    kap.innerHTML = liste.map(function (g) {
+      var adlar = (g.adlar || []).filter(Boolean);
+      var h = '<article class="gonderim' + (g.kilitli ? " kilitli" : "") + '"><div class="g-bilgi"><div class="g-ust"><span class="g-no">' + esc(g.gonderimNo) + "</span>";
+      if (g.kilitli) h += '<span class="cip kilit">Kilitli</span>';
+      h += "</div>";
+      if (adlar.length) h += '<div class="g-adlar">' + adlar.map(esc).join(" · ") + (g.etkinlik > adlar.length ? " · …" : "") + "</div>";
+      h += '<div class="g-alt">' + esc(g.etkinlik) + " etkinlik, " + esc(g.oturum) + " oturum · Gönderildi " + esc(g.zaman) + (g.guncelleme ? " · Son değişiklik " + esc(g.guncelleme) : "") + (g.birim ? " · " + esc(g.birim) : "") + "</div></div>";
+      h += '<button type="button" class="dugme" data-act="duzenle" data-no="' + esc(g.gonderimNo) + '"' + (g.kilitli ? ' disabled title="Bu gönderim kilitlendi; artık değiştirilemez."' : "") + ">" + (g.kilitli ? "Düzenlenemez" : "Düzenle") + "</button></article>";
+      return h;
+    }).join("");
+  }
+
+  // ---------- form durumu ----------
   var S = { gonderen: bosGonderen(), etkinlikler: [bosEtkinlik()] };
   var hatalar = {};
-  var $ = function (id) { return document.getElementById(id); };
-  function esc(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function bul(eid) { return S.etkinlikler.find(function (e) { return e.id === eid; }); }
   function bulO(eid, oid) { var e = bul(eid); return e && e.oturumlar.find(function (o) { return o.id === oid; }); }
   function kisaTarih(t) { if (!t) return ""; var a = t.split("-"); return a[2] + "." + a[1]; }
   function durumSinif(d) { var x = DURUMLAR.find(function (k) { return k[0] === d; }); return x ? x[1] : ""; }
 
-  // ---------- taslak ----------
+  function taslakAnahtar() { return TASLAK_ONEK + (OT ? OT.eposta : "") + ":" + (DUZENLENEN || "yeni"); }
   var taslakZaman = null;
   function taslakKaydet() {
     clearTimeout(taslakZaman);
     taslakZaman = setTimeout(function () {
-      try {
-        localStorage.setItem(TASLAK_ANAHTAR, JSON.stringify({ surum: 1, kayit: Date.now(), veri: S }));
+      if (yaz(taslakAnahtar(), { kayit: Date.now(), veri: S })) {
         var d = new Date();
-        $("taslak-durum").textContent = "Taslak kaydedildi · " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-      } catch (e) { $("taslak-durum").textContent = "Bu tarayıcı taslak kaydına izin vermiyor; formu tek seferde gönderin."; }
+        $("taslak-durum").textContent = "Taslak kaydedildi · " + iki(d.getHours()) + ":" + iki(d.getMinutes());
+      } else $("taslak-durum").textContent = "Bu tarayıcı taslak kaydına izin vermiyor; formu tek seferde gönderin.";
     }, 350);
   }
   function taslakOku() {
-    try {
-      var t = JSON.parse(localStorage.getItem(TASLAK_ANAHTAR) || "null");
-      if (t && t.veri && Array.isArray(t.veri.etkinlikler) && t.veri.etkinlikler.length) return t.veri;
-    } catch (e) { /* taslak yok */ }
+    var t = oku(taslakAnahtar());
+    if (t && t.veri && Array.isArray(t.veri.etkinlikler) && t.veri.etkinlikler.length) {
+      var v = t.veri; v.gonderen = Object.assign(bosGonderen(), v.gonderen || {});
+      v.etkinlikler.forEach(function (e) { e.oturumlar.forEach(function (o) { o.katilim = Array.isArray(o.katilim) ? o.katilim : []; }); });
+      return v;
+    }
     return null;
   }
-  function taslakSil() { try { localStorage.removeItem(TASLAK_ANAHTAR); } catch (e) { /* yok */ } }
+  function taslakSil() { clearTimeout(taslakZaman); sil(taslakAnahtar()); }
+
+  function sunucudanDurum(v) {
+    var g = bosGonderen(), go = v.gonderen || {};
+    birimAta(g, go.birim); g.hazirlayan = go.hazirlayan || ""; g.iletisim = go.iletisim || "";
+    var cok = (v.etkinlikler || []).length > 3, liste = (v.etkinlikler || []).length ? v.etkinlikler : [{}];
+    return { gonderen: g, etkinlikler: liste.map(function (e) {
+      var ye = bosEtkinlik();
+      ye.ad = e.ad || ""; ye.seri = e.seri || ""; ye.durum = DURUMLAR.some(function (d) { return d[0] === e.durum; }) ? e.durum : ""; ye.acik = !cok;
+      ye.oturumlar = (e.oturumlar || []).map(function (o) {
+        var yo = bosOturum();
+        ["ad", "tarih", "baslangic", "bitis", "mekan", "konusmacilar", "moderator", "diger", "tanitim", "isbirligi", "notlar"].forEach(function (k) { yo[k] = o[k] || ""; });
+        if (o.tur) { if (A.turler.indexOf(o.tur) >= 0) yo.tur = o.tur; else { yo.tur = DIGER; yo.turDiger = o.tur === DIGER ? "" : o.tur; } }
+        yo.katilim = (o.katilim || []).filter(function (k) { return KATILIM.indexOf(k) >= 0; });
+        return yo;
+      });
+      if (!ye.oturumlar.length) ye.oturumlar = [bosOturum()];
+      return ye;
+    }) };
+  }
+
+  function formModu(taslakVar) {
+    $("duzenleme-bant").hidden = !DUZENLENEN; $("duzenleme-no").textContent = DUZENLENEN || "";
+    $("gonder").textContent = DUZENLENEN ? "Değişiklikleri kaydet" : "Formu gönder";
+    $("taslak-bant").hidden = !taslakVar;
+    $("taslak-metin").textContent = DUZENLENEN ? "Bu gönderimde kaydetmediğiniz değişiklikler geri yüklendi." : "Bu tarayıcıda yarım kalan formunuz geri yüklendi.";
+    $("taslak-sil-dugme").textContent = DUZENLENEN ? "Kaydedilmiş hâline dön" : "Boş formla başla";
+    $("cubuk-hata").textContent = ""; $("taslak-durum").textContent = "Form bu tarayıcıda otomatik olarak taslak kaydedilir.";
+    temizleDugmesi();
+  }
+  function yeniFormAc() {
+    DUZENLENEN = null; KILITLI = false; hatalar = {};
+    var t = taslakOku();
+    S = t || { gonderen: gonderenVarsayilan(), etkinlikler: [bosEtkinlik()] };
+    formModu(!!t); goster("form"); hepsiniCiz();
+  }
+  function duzenlemeAc(no, taslakYok) {
+    bildir("Gönderim açılıyor…");
+    api("gonderimGetir", { gonderimNo: no }).then(function (j) {
+      $("bildirim").hidden = true;
+      if (j.kilitli) { bildir("Bu gönderim kilitlenmiş; artık değiştirilemez."); paneliAc(); return; }
+      DUZENLENEN = j.gonderimNo; KILITLI = false; hatalar = {};
+      if (taslakYok) taslakSil();
+      var t = taslakOku();
+      S = t || sunucudanDurum(j.veri);
+      formModu(!!t); goster("form"); hepsiniCiz();
+    }).catch(function (err) { if (!oturumHatasi(err)) bildir(err.message); });
+  }
 
   // ---------- çizim ----------
   function alan(o) {
@@ -312,7 +620,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
     var kontrol;
     if (o.tip === "metin") kontrol = '<textarea' + ortak + ' rows="' + (o.satir || 3) + '">' + esc(o.deger) + "</textarea>";
     else if (o.tip === "liste") {
-      kontrol = "<select" + ortak + '><option value="">' + esc(o.bos || "Seçin") + "</option>" + o.secenekler.map(function (s) {
+      var sec = o.secenekler.slice();
+      var degerler = sec.map(function (s) { return Array.isArray(s) ? s[0] : s; });
+      if (o.deger && degerler.indexOf(o.deger) < 0) sec.unshift(o.deger); // listede olmayan eski değer kaybolmasın
+      kontrol = "<select" + ortak + '><option value="">' + esc(o.bos || "Seçin") + "</option>" + sec.map(function (s) {
         var v = Array.isArray(s) ? s[0] : s, l = Array.isArray(s) ? s[1] : s;
         return '<option value="' + esc(v) + '"' + (v === o.deger ? " selected" : "") + ">" + esc(l) + "</option>";
       }).join("") + "</select>";
@@ -329,7 +640,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
       h += alan({ k: "g.birimDiger", etiket: "Birim / kurum", zorunlu: true, deger: g.birimDiger });
     }
     h += alan({ k: "g.hazirlayan", etiket: "Formu dolduran", zorunlu: true, deger: g.hazirlayan, yer: "Adınız soyadınız" });
-    h += alan({ k: "g.iletisim", etiket: "İletişim", ipucu: "telefon veya e-posta", deger: g.iletisim });
+    h += alan({ k: "g.iletisim", etiket: "Telefon", ipucu: "isteğe bağlı" + (OT ? "; e-postanız: " + OT.eposta : ""), deger: g.iletisim });
     $("gonderen").innerHTML = h;
   }
 
@@ -451,7 +762,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
     sayacGuncelle();
   }
 
-  // ---------- giriş ----------
+  // ---------- giriş alanlarındaki değişiklikler ----------
   function degerYaz(el) {
     var k = el.getAttribute("data-k"), parca = k.split("."), alanAd = parca[parca.length - 1], hedef, eid = null;
     if (parca[0] === "g") hedef = S.gonderen;
@@ -478,13 +789,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
     if (eid) basligiTazele(eid);
     taslakKaydet();
   }
-  document.addEventListener("input", function (ev) { if (ev.target.hasAttribute && ev.target.hasAttribute("data-k")) degerYaz(ev.target); });
-  document.addEventListener("change", function (ev) {
+  $("form").addEventListener("input", function (ev) { if (ev.target.hasAttribute && ev.target.hasAttribute("data-k")) degerYaz(ev.target); });
+  $("form").addEventListener("change", function (ev) {
     var t = ev.target;
     if (t.hasAttribute && t.hasAttribute("data-k") && (t.type === "checkbox" || t.type === "radio" || t.tagName === "SELECT" || t.type === "date")) degerYaz(t);
   });
 
-  // ---------- eylemler ----------
+  // ---------- düğmeler ----------
   var geriAlVeri = null, bildirimZaman = null;
   function bildir(metin, geriAl) {
     var b = $("bildirim");
@@ -525,24 +836,33 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
       i = S.etkinlikler.indexOf(e); S.etkinlikler.splice(i + 1, 0, ke); hepsiniCiz(); taslakKaydet();
       bildir("Etkinliğin kopyası eklendi; adını ve tarihlerini güncelleyin."); odakla("#e-" + ke.id + "-ad");
     } else if (act === "ac-kapa" && e) {
-      e.acik = !e.acik; hepsiniCiz(); taslakKaydet();
+      e.acik = !e.acik; hepsiniCiz(); // yalnızca görünüm; taslak oluşturmaz
     } else if (act === "tumunu-daralt") {
       var hedef = !S.etkinlikler.some(function (x) { return x.acik; });
-      S.etkinlikler.forEach(function (x) { x.acik = hedef; }); hepsiniCiz(); taslakKaydet();
+      S.etkinlikler.forEach(function (x) { x.acik = hedef; }); hepsiniCiz();
     } else if (act === "temizle-sor") {
       $("temizle-alan").innerHTML = '<span class="onay">Bütün etkinlikler silinsin mi? <button type="button" class="dugme metin sil" data-act="temizle">Evet, temizle</button><button type="button" class="dugme metin" data-act="temizle-vazgec">Vazgeç</button></span>';
     } else if (act === "temizle-vazgec") {
       temizleDugmesi();
     } else if (act === "temizle") {
       S.etkinlikler = [bosEtkinlik()]; hatalar = {}; temizleDugmesi(); hepsiniCiz(); taslakKaydet();
-      $("ornek-not").hidden = true; $("taslak-bant").hidden = true;
+      $("taslak-bant").hidden = true;
     } else if (act === "taslak-sil") {
-      taslakSil(); S = { gonderen: bosGonderen(), etkinlikler: [bosEtkinlik()] }; hatalar = {};
-      $("taslak-bant").hidden = true; $("ornek-not").hidden = true; temizleDugmesi(); hepsiniCiz();
-      $("taslak-durum").textContent = "Taslak silindi; form boş.";
+      if (DUZENLENEN) { duzenlemeAc(DUZENLENEN, true); return; }
+      taslakSil(); S = { gonderen: gonderenVarsayilan(), etkinlikler: [bosEtkinlik()] }; hatalar = {};
+      formModu(false); hepsiniCiz(); $("taslak-durum").textContent = "Taslak silindi; form boş.";
     } else if (act === "yeni-form") {
-      S = { gonderen: S.gonderen, etkinlikler: [bosEtkinlik()] }; hatalar = {};
-      $("sonuc").hidden = true; $("form").hidden = false; hepsiniCiz(); taslakKaydet(); window.scrollTo(0, 0);
+      yeniFormAc();
+    } else if (act === "panel") {
+      paneliAc();
+    } else if (act === "duzenle") {
+      duzenlemeAc(b.getAttribute("data-no"));
+    } else if (act === "cikis") {
+      cikisYap("Çıkış yaptınız.", true);
+    } else if (act === "mod-giris" || act === "mod-kayit") {
+      girisModu(act === "mod-kayit" ? "kayit" : "giris"); $(GIRIS_MODU === "kayit" && $("giris-eposta").value ? "giris-sifre" : "giris-eposta").focus();
+    } else if (act === "unuttum") {
+      girisMesaj("Şifrenizi unuttuysanız e-posta adresinizi form yöneticisine bildirin. Yönetici şifrenizi sıfırladıktan sonra “Kayıt ol” sekmesinden yeni bir şifre belirlersiniz. Gönderimleriniz silinmez.");
     }
   });
   function temizleDugmesi() { $("temizle-alan").innerHTML = '<button type="button" class="dugme metin sil" data-act="temizle-sor">Etkinlikleri temizle</button>'; }
@@ -552,7 +872,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
     });
   }
 
-  // ---------- doğrulama ----------
+  // ---------- doğrulama ve kayıt ----------
   function dogrula() {
     hatalar = {};
     var g = S.gonderen, bos = function (v) { return !String(v || "").trim(); };
@@ -582,8 +902,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
   function veriHazirla() {
     var t = function (v) { return String(v || "").trim(); }, g = S.gonderen;
     return {
-      surum: 1,
-      anahtar: A.formAnahtari || "",
+      surum: 2,
       gonderen: { birim: t(A.birimler.length && g.birim !== LISTEDE_YOK ? g.birim : g.birimDiger), hazirlayan: t(g.hazirlayan), iletisim: t(g.iletisim) },
       etkinlikler: S.etkinlikler.map(function (e) {
         return {
@@ -600,19 +919,19 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
     };
   }
 
-  function sonucGoster(no, veri, demo) {
+  function sonucGoster(j, veri) {
     var et = veri.etkinlikler.length, ot = veri.etkinlikler.reduce(function (s, e) { return s + e.oturumlar.length; }, 0);
-    var h = "<h2>" + (demo ? "Deneme gönderimi tamam" : "Formunuz alındı") + "</h2>";
-    h += demo ? "<p>Deneme modundasınız; veri hiçbir yere gönderilmedi. Gerçek kurulumda bu bilgiler E-Tabloya şu düzende yazılır.</p>"
-      : "<p>Teşekkürler. " + et + " etkinlik ve " + ot + " oturum kaydedildi. Bu gönderimle ilgili bir değişiklik için aşağıdaki numarayı belirtin.</p>";
-    if (no) h += '<p>Gönderim no: <span class="no">' + esc(no) + "</span></p>";
-    if (demo) h += "<details open><summary>Gönderilecek veri (" + et + " etkinlik, " + ot + " oturum)</summary><pre>" + esc(JSON.stringify(veri, null, 2)) + "</pre></details>";
-    h += '<div><button type="button" class="dugme ana" data-act="yeni-form">Yeni form doldur</button></div>';
-    $("sonuc").innerHTML = h; $("sonuc").hidden = false; $("form").hidden = true; window.scrollTo(0, 0);
+    var h = "<h2>" + (j.guncellendi ? "Değişiklikleriniz kaydedildi" : "Formunuz alındı") + "</h2>";
+    h += "<p>" + et + " etkinlik ve " + ot + " oturum kaydedildi. Bu gönderimi istediğiniz zaman “Gönderimlerim” sayfasından açıp düzenleyebilirsiniz.</p>";
+    h += '<p>Gönderim no: <span class="no">' + esc(j.gonderimNo) + "</span></p>";
+    if (DEMO) h += "<p class=\"soluk\">Deneme modundasınız; kayıt yalnızca bu tarayıcıda tutuldu.</p><details><summary>Gönderilen veri (" + et + " etkinlik, " + ot + " oturum)</summary><pre>" + esc(JSON.stringify(veri, null, 2)) + "</pre></details>";
+    h += '<div class="satir-dugmeler"><button type="button" class="dugme ana" data-act="panel">Gönderimlerime dön</button><button type="button" class="dugme" data-act="yeni-form">Yeni form doldur</button></div>';
+    $("sonuc").innerHTML = h; goster("sonuc");
   }
 
   $("form").addEventListener("submit", function (ev) {
     ev.preventDefault();
+    if (KILITLI) { $("cubuk-hata").textContent = "Bu gönderim kilitlenmiş; değiştirilemez."; return; }
     var n = dogrula();
     if (n) {
       S.etkinlikler.forEach(function (e) { if (etkinlikHataSayisi(e)) e.acik = true; });
@@ -621,40 +940,25 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
       if (ilk) { ilk.scrollIntoView({ behavior: "smooth", block: "center" }); ilk.focus({ preventScroll: true }); }
       return;
     }
-    var veri = veriHazirla();
-    if (DEMO) { sonucGoster("", veri, true); return; }
-    var btn = $("gonder"); btn.disabled = true; btn.textContent = "Gönderiliyor…";
-    fetch(A.gonderimAdresi, { method: "POST", body: JSON.stringify(veri) })
-      .then(function (r) { return r.json(); })
-      .then(function (j) {
-        if (!j || !j.ok) throw new Error((j && j.hata) || "Sunucu yanıt vermedi.");
-        taslakSil(); sonucGoster(j.gonderimNo, veri, false);
-      })
+    var veri = veriHazirla(), btn = $("gonder"), metin = btn.textContent;
+    btn.disabled = true; btn.textContent = DUZENLENEN ? "Kaydediliyor…" : "Gönderiliyor…";
+    api("kaydet", { gonderimNo: DUZENLENEN || "", veri: veri })
+      .then(function (j) { taslakSil(); sonucGoster(j, veri); })
       .catch(function (err) {
-        $("cubuk-hata").textContent = "Gönderilemedi: " + err.message + " Formunuz bu tarayıcıda saklı; biraz sonra tekrar deneyin.";
+        if (oturumHatasi(err)) return;
+        $("cubuk-hata").textContent = (DUZENLENEN ? "Kaydedilemedi: " : "Gönderilemedi: ") + err.message + " Formunuz bu tarayıcıda saklı.";
       })
-      .then(function () { btn.disabled = false; btn.textContent = "Formu gönder"; });
+      .then(function () { btn.disabled = false; btn.textContent = metin; });
   });
 
   // ---------- başlangıç ----------
-  function baslat(hot) {
-    document.title = A.baslik;
-    $("baslik").textContent = A.baslik;
-    $("aciklama").textContent = A.aciklama || "";
-    $("aciklama").hidden = !A.aciklama;
-    $("demo-bant").hidden = !DEMO;
-    var t = (hot && hot.S) || taslakOku();
-    if (t) {
-      S = t; S.gonderen = Object.assign(bosGonderen(), S.gonderen || {});
-      S.etkinlikler.forEach(function (e) { e.oturumlar.forEach(function (o) { o.katilim = Array.isArray(o.katilim) ? o.katilim : []; }); });
-      $("taslak-bant").hidden = !!(hot && hot.S); $("ornek-not").hidden = true;
-    } else if (DEMO) { S = ornekVeri(); }
-    else { $("ornek-not").hidden = true; }
-    hepsiniCiz();
-  }
-  var hk = window.claude && window.claude.hot;
-  if (hk && hk.snapshot) hk.snapshot(function () { return { S: S }; });
-  if (hk && hk.ready) hk.ready(baslat); else baslat(hk && hk.data ? hk.data : null);
+  document.title = A.baslik;
+  $("baslik").textContent = A.baslik;
+  $("aciklama").textContent = A.aciklama || "";
+  $("aciklama").hidden = !A.aciklama;
+  $("demo-bant").hidden = !DEMO;
+  girisModu("giris");
+  if (OT) paneliAc(); else goster("giris");
 })();
 </script>
 </body>
