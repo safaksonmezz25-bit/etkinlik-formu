@@ -185,6 +185,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
   </div>
   <div class="bant bilgi" id="taslak-bant" hidden>
     <div class="bant-metin">Bu tarayıcıda yarım kalan formunuz geri yüklendi.</div>
+    <button type="button" class="dugme metin sil" data-act="taslak-sil" style="min-height:28px; padding:2px 8px;">Boş formla başla</button>
   </div>
 
   <form id="form" novalidate>
@@ -225,7 +226,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
 
 <div class="bildirim" id="bildirim" role="status" hidden></div>
 
-<script src="ayarlar.js"></script>
+<!-- ayarlar.js her açılışta güncel hâliyle yüklenir (önbellekteki eski sürüm kullanılmaz) -->
+<script>document.write('<script src="ayarlar.js?t=' + Date.now() + '"><\/script>');</script>
+<noscript><p>Bu form için tarayıcınızda JavaScript açık olmalıdır.</p></noscript>
 <script>
 (function () {
   "use strict";
@@ -235,7 +238,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
     saatIlk: "07:00", saatSon: "23:45", saatAdimDk: 15
   }, window.FORM_AYARLARI || {});
   var DEMO = !String(A.gonderimAdresi || "").trim();
-  var TASLAK_ANAHTAR = "etkinlik-formu-taslak-v1";
+  // Deneme modunun taslağı ayrı tutulur; gerçek forma taşınmaz.
+  var TASLAK_ANAHTAR = DEMO ? "etkinlik-formu-deneme-v1" : "etkinlik-formu-taslak-v1";
   var DURUMLAR = [["Kesinleşti", "kesinlesti"], ["Planlanıyor", "planlaniyor"], ["Öneri", "oneri"]];
   var KATILIM = ["Herkese açık", "Davetli", "Kayıt gerekli"];
   var DIGER = "Diğer", LISTEDE_YOK = "__listede_yok";
@@ -532,6 +536,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--focus); }
     } else if (act === "temizle") {
       S.etkinlikler = [bosEtkinlik()]; hatalar = {}; temizleDugmesi(); hepsiniCiz(); taslakKaydet();
       $("ornek-not").hidden = true; $("taslak-bant").hidden = true;
+    } else if (act === "taslak-sil") {
+      taslakSil(); S = { gonderen: bosGonderen(), etkinlikler: [bosEtkinlik()] }; hatalar = {};
+      $("taslak-bant").hidden = true; $("ornek-not").hidden = true; temizleDugmesi(); hepsiniCiz();
+      $("taslak-durum").textContent = "Taslak silindi; form boş.";
     } else if (act === "yeni-form") {
       S = { gonderen: S.gonderen, etkinlikler: [bosEtkinlik()] }; hatalar = {};
       $("sonuc").hidden = true; $("form").hidden = false; hepsiniCiz(); taslakKaydet(); window.scrollTo(0, 0);
