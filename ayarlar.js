@@ -17,14 +17,7 @@ window.FORM_AYARLARI = {
 
   // Birim listesi. Listede olmayan birimler "Listede yok" seçip adını yazabilir.
   // Liste boş bırakılırsa ([]) birim adı serbestçe yazılır.
-  birimler: [
-    "Beyoğlu Sineması",
-    "Dini Kurum ve Topluluklarla İlişkiler",
-    "İFSAK Bulgur Palas",
-    "İstanbul Boğaz Müzesi",
-    "Kuyumcuhan",
-    "Botter"
-  ],
+  birimler: [],
 
   // Oturum türleri. Listenin sonuna otomatik olarak "Diğer" eklenir.
   turler: [
