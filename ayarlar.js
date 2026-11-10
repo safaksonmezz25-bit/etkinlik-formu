@@ -10,7 +10,7 @@ window.FORM_AYARLARI = {
 
   // Google E-Tablo scriptini yayınladığınızda aldığınız adres (sonu /exec ile biter).
   // Boş bırakılırsa form "deneme modunda" çalışır: veri hiçbir yere gönderilmez.
-  gonderimAdresi: "https://script.google.com/macros/s/AKfycbwT17FJc7t_tyIx7WjmcVjkyt4_htJt_Okk00SfvNK2FH-0KCrql1xoJU-iTjbLPy6O/exec",
+  gonderimAdresi: "https://script.google.com/macros/s/AKfycbxORBQ6L1fa60k69fQefeIfuxsv0qLy9kghcSCTN_mut-EVNebAUEW1lV3AteonER-7/exec",
 
   // İsteğe bağlı: Kod.gs içindeki FORM_ANAHTARI ile aynı olmalı. Boş bırakılabilir.
   formAnahtari: "",
